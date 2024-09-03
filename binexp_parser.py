@@ -21,6 +21,8 @@ class BinOpAst:
 
     Reads input as a list of tokens in prefix notation, converts into internal representation,
     then can convert to prefix, postfix, or infix string output.
+
+    The class object will act as an object representing the root node.
     """
 
     def __str__(self, indent=0):
@@ -119,6 +121,25 @@ class BinOpAst:
         #     case NodeType.operator:
         #         return self.left.postfix_str() + ' ' + self.right.postfix_str() + ' ' + self.val
 
+    def print_depth_traversal_and_backtracking(self):
+
+        print(self.prefix_str())
+
+        # if number reached backtrack (base case)
+        if self.type == NodeType.number:
+            print('\nNow displaying the backtrack...')
+            print(self.val, self.type)
+            return
+
+        # it's a right leaning tree with all left children being constants and all
+        # right children being operators until the right-most leaf node
+        # so traverse until the end of the right branch and then work back up
+        self.right.print_depth_traversal_and_backtracking()
+
+        print(self.val, self.type)
+        print('left child:', self.left.val, self.left.type)
+        print('right child:', self.right.val, self.right.type)
+
     def additive_identity(self):
 
         """
@@ -126,9 +147,31 @@ class BinOpAst:
         x + 0 = x
         """
 
-        # IMPLEMENT ME!
-        pass
-                        
+        # if number reached backtrack (base case)
+        if self.type == NodeType.number:
+            return
+
+        # it's a right leaning tree with all left children being constants and all
+        # right children being operators until the right-most leaf node
+        # so traverse until the end of the right branch and then work back up
+        self.right.additive_identity()
+
+        # the left node is guaranteed to be a constant-value node with no children
+        # so if the right node is a zero constant, simply shift the left node value
+        # and type up and discard of the zero-value right child
+        if self.right.val == '0':
+            self.val = self.left.val
+            self.val = self.left.type
+        # else if left node is a zero constant, effectively discard the zero-value
+        # left child as well as the entire operation step and shift right node up
+        elif self.left.val == '0':
+            # take on the value and type of the right child
+            self.val = self.right.val
+            self.type = self.right.type
+            # take on the children of the right child
+            self.left = self.right.left
+            self.right = self.right.right
+
     def multiplicative_identity(self):
 
         """
@@ -160,7 +203,7 @@ class BinOpAst:
     #     # to represent identifiers.
     #     pass
 
-    def simplify_binops(self):
+    def simplify_binary_operators(self):
         """
         Simplify binary trees with the following:
         1) Additive identity, e.g. x + 0 = x
@@ -176,4 +219,20 @@ class BinOpAst:
 
 if __name__ == "__main__":
     # unittest.main()
-    print(list(NodeType))
+    # print(list(NodeType))
+
+    prefix_list = '+ 1 x 5 + 0 + 6 x 2 3'
+    prefix_list = prefix_list.split()
+    print(prefix_list)
+
+    ast = BinOpAst(prefix_list)
+    # print(ast)
+
+    # print(ast.infix_str())
+    # print(ast.prefix_str())
+    # print()
+    # ast.additive_identity()
+    # print()
+    # print(ast.prefix_str())
+
+    pass
