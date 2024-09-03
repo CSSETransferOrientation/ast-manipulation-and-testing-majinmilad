@@ -12,9 +12,10 @@ from enum import Enum
 # distinguish between the addition and multiplication operators
 NodeType = Enum('BinOpNodeType', ['number', 'operator'])
 
-# pass a prefix list in and it is popped off like a queue to build the tree
+# pass a prefix list of string characters in and it is popped off like a queue to build the tree
 # enums are used to classify the type of node in the tree (a number or an operator)
-class BinOpAst:
+# the AST can prune out non-consequential additive and multiplicative identities from the tree
+class BinaryOperatorAST:
 
     """
     A somewhat quick and dirty structure to represent a binary operator AST.
@@ -64,8 +65,8 @@ class BinOpAst:
             self.right = False
         else:
             self.type = NodeType.operator
-            self.left = BinOpAst(prefix_list)
-            self.right = BinOpAst(prefix_list)
+            self.left = BinaryOperatorAST(prefix_list)
+            self.right = BinaryOperatorAST(prefix_list)
 
     def prefix_str(self):
 
@@ -121,6 +122,7 @@ class BinOpAst:
         #     case NodeType.operator:
         #         return self.left.postfix_str() + ' ' + self.right.postfix_str() + ' ' + self.val
 
+    # a debugging function for inspecting the state of the tree during recursive traversal
     def print_depth_traversal_and_backtracking(self):
 
         print(self.prefix_str())
@@ -140,7 +142,7 @@ class BinOpAst:
         print('left child:', self.left.val, self.left.type)
         print('right child:', self.right.val, self.right.type)
 
-    def additive_identity(self):
+    def additive_identity_prune(self):
 
         """
         Reduce additive identities
@@ -154,17 +156,21 @@ class BinOpAst:
         # it's a right leaning tree with all left children being constants and all
         # right children being operators until the right-most leaf node
         # so traverse until the end of the right branch and then work back up
-        self.right.additive_identity()
+        self.right.additive_identity_prune()
+
+        # note below we are checking if the operator node value is '+' because we're only doing additive identity pruning
 
         # the left node is guaranteed to be a constant-value node with no children
-        # so if the right node is a zero constant, simply shift the left node value
-        # and type up and discard of the zero-value right child
-        if self.right.val == '0':
+        # so if the right node is a zero constant, simply shift the left node number
+        # value and type up and discard of the zero-value right child
+        if self.right.val == '0' and self.val == '+':
             self.val = self.left.val
-            self.val = self.left.type
+            self.type = self.left.type
+            self.left = False
+            self.right = False
         # else if left node is a zero constant, effectively discard the zero-value
         # left child as well as the entire operation step and shift right node up
-        elif self.left.val == '0':
+        elif self.left.val == '0' and self.val == '+':
             # take on the value and type of the right child
             self.val = self.right.val
             self.type = self.right.type
@@ -172,38 +178,67 @@ class BinOpAst:
             self.left = self.right.left
             self.right = self.right.right
 
-    def multiplicative_identity(self):
+    def multiplicative_identity_prune(self):
 
         """
         Reduce multiplicative identities
         x * 1 = x
         """
 
-        # IMPLEMENT ME!
+        # if number reached backtrack (base case)
+        if self.type == NodeType.number:
+            return
+
+        # it's a right leaning tree with all left children being constants and all
+        # right children being operators until the right-most leaf node
+        # so traverse until the end of the right branch and then work back up
+        self.right.multiplicative_identity_prune()
+
+        # note below we are checking if the operator node value is '*' because we're only doing additive identity pruning
+
+        # the left node is guaranteed to be a constant-value node with no children
+        # so if the right node is a one constant, simply shift the left node number
+        # value and type up and discard of the one-value right child
+        if self.right.val == '1' and self.val == '*':
+            self.val = self.left.val
+            self.type = self.left.type
+            self.left = False
+            self.right = False
+        # else if left node is a one constant, effectively discard the one-value
+        # left child as well as the entire operation step and shift right node up
+        elif self.left.val == '1' and self.val == '*':
+            # take on the value and type of the right child
+            self.val = self.right.val
+            self.type = self.right.type
+            # take on the children of the right child
+            self.left = self.right.left
+            self.right = self.right.right
+
+    def mult_by_zero(self):
+
+        """
+        Reduce multiplication by zero
+        x * 0 = 0
+        """
+
+        # Optionally, IMPLEMENT ME! (I'm pretty easy)
         pass
 
-    # def mult_by_zero(self):
-    #
-    #     """
-    #     Reduce multiplication by zero
-    #     x * 0 = 0
-    #     """
-    #
-    #     # Optionally, IMPLEMENT ME! (I'm pretty easy)
-    #     pass
-    #
-    # def constant_fold(self):
-    #     """
-    #     Fold constants,
-    #     e.g. 1 + 2 = 3
-    #     e.g. x + 2 = x + 2
-    #     """
-    #     # Optionally, IMPLEMENT ME! This is a bit more challenging.
-    #     # You also likely want to add an additional node type to your AST
-    #     # to represent identifiers.
-    #     pass
+    def constant_fold(self):
+
+        """
+        Fold constants,
+        e.g. 1 + 2 = 3
+        e.g. x + 2 = x + 2
+        """
+
+        # Optionally, IMPLEMENT ME! This is a bit more challenging.
+        # You also likely want to add an additional node type to your AST
+        # to represent identifiers.
+        pass
 
     def simplify_binary_operators(self):
+
         """
         Simplify binary trees with the following:
         1) Additive identity, e.g. x + 0 = x
@@ -211,28 +246,53 @@ class BinOpAst:
         3) Extra #1: Multiplication by 0, e.g. x * 0 = 0
         4) Extra #2: Constant folding, e.g. statically we can reduce 1 + 1 to 2, but not x + 1 to anything
         """
-        self.additive_identity()
-        self.multiplicative_identity()
+
+        self.additive_identity_prune()
+        self.multiplicative_identity_prune()
         # self.mult_by_zero()
         # self.constant_fold()
 
+class TestBinaryOperatorAST(unittest.TestCase):
+
+    def test_all_cases(self):
+        self.run_specified_tests('arith_id', BinaryOperatorAST.additive_identity_prune)
+        self.run_specified_tests('mult_id', BinaryOperatorAST.multiplicative_identity_prune)
+        print('ALL TESTS RAN SUCCESSFULLY')
+
+    # specify parent directory of tests and the modifying function being tested
+    def run_specified_tests(self, test_folder_name: str, bin_op_ast_function):
+
+        print('TESTING', test_folder_name, 'TEST CASES...\n')
+
+        # create path to input and output files, respectively
+        input_files_path = osjoin('testbench', test_folder_name, 'inputs')
+        output_files_path = osjoin('testbench', test_folder_name, 'outputs')
+
+        # get an iterable list of file names
+        input_file_names = os.listdir(input_files_path)
+
+        # iterate through input files and test against output files
+        for file_name in input_file_names:
+
+            # read input files, feed to tree, prune and retrieve new outputted prefix string
+            with open(osjoin(input_files_path, file_name)) as file:
+
+                # create ast from the input file prefix string
+                prefix_list = file.readline().split()
+                ast = BinaryOperatorAST(prefix_list)
+
+                # run the modifying function
+                bin_op_ast_function(ast)  # generalize this call
+
+                # collect the prefix string output of the modified tree
+                output = ast.prefix_str()
+
+            # read output files and compare against outputted prefix string from the tree
+            with open(osjoin(output_files_path, file_name)) as file:
+                expected_output = file.readline()
+                self.assertEqual(output, expected_output,
+                                 'Oh-oh, output did not match expected output! - for test file: ' + file_name)
+
 
 if __name__ == "__main__":
-    # unittest.main()
-    # print(list(NodeType))
-
-    prefix_list = '+ 1 x 5 + 0 + 6 x 2 3'
-    prefix_list = prefix_list.split()
-    print(prefix_list)
-
-    ast = BinOpAst(prefix_list)
-    # print(ast)
-
-    # print(ast.infix_str())
-    # print(ast.prefix_str())
-    # print()
-    # ast.additive_identity()
-    # print()
-    # print(ast.prefix_str())
-
-    pass
+    unittest.main()
