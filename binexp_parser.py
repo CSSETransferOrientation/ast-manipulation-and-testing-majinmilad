@@ -122,6 +122,7 @@ class BinaryOperatorAST:
         #     case NodeType.operator:
         #         return self.left.postfix_str() + ' ' + self.right.postfix_str() + ' ' + self.val
 
+# ;;> Clever function here!
     # a debugging function for inspecting the state of the tree during recursive traversal
     def print_depth_traversal_and_backtracking(self):
 
@@ -133,6 +134,7 @@ class BinaryOperatorAST:
             print(self.val, self.type)
             return
 
+# ;;> Same problem as below
         # it's a right leaning tree with all left children being constants and all
         # right children being operators until the right-most leaf node
         # so traverse until the end of the right branch and then work back up
@@ -153,6 +155,8 @@ class BinaryOperatorAST:
         if self.type == NodeType.number:
             return
 
+# ;;> Not sure why you think it's right leaning, maybe just from the examples you came up with? It can be anything, e.g. '+ + 0 1 0' -> '(0+1)+0'
+# ;;> Just need the left recursive call as well
         # it's a right leaning tree with all left children being constants and all
         # right children being operators until the right-most leaf node
         # so traverse until the end of the right branch and then work back up
@@ -188,7 +192,7 @@ class BinaryOperatorAST:
         # if number reached backtrack (base case)
         if self.type == NodeType.number:
             return
-
+# ;;> same problem
         # it's a right leaning tree with all left children being constants and all
         # right children being operators until the right-most leaf node
         # so traverse until the end of the right branch and then work back up

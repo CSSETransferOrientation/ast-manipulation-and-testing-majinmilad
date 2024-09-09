@@ -24,3 +24,5 @@ when it should have been
         if self.right.val == '0':
 
 This is a lesson in the pitfalls that come with a weakly typed language such as Python (and an irritating reminder of how much I sometimes hate its quirks ... I mean "features") and that the onus is on the programmer; the compiler will not catch simple programming errors for you like it would in strongly typed languages. Instead, it will let you compare differing types, create non-existent variables out of thin air, assign anything to anything and force you to always pass by reference (kind of?) ... all in the name of simplicity and readability! Yay.
+
+# ;;> Glad you got something out of the assignment! I had the exact same 0 vs '0' bug when I did mine initially... yay and boo python.
